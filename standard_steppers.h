@@ -9,7 +9,13 @@
 
 #include <Arduino.h>
 #include "AccelStepper.h"
+#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
 #include "atmega328p_pins.h"
+#endif
+
+#if defined(__AVR_ATmegax08__)
+#include "atmega3208_pins.h"
+#endif
 
 #define UNUSED_PIN 127
 
