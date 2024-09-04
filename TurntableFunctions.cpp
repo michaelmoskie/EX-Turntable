@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with EX-Turntable.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 /*=============================================================
  * This file contains all functions pertinent to turntable
@@ -25,36 +25,30 @@
 
 #include "TurntableFunctions.h"
 #include "IOFunctions.h"
+#include "atmega328p_pins.h"
+const long sanitySteps = SANITY_STEPS;         // Define an arbitrary number of steps to prevent indefinite spinning if homing/calibrations fails.
+const long homeSensitivity = HOME_SENSITIVITY; // Define the minimum number of steps required before homing sensor deactivates.
+const int16_t totalMinutes = 21600;            // Total minutes in one rotation (360 * 60)
 
-const long sanitySteps = SANITY_STEPS;              // Define an arbitrary number of steps to prevent indefinite spinning if homing/calibrations fails.
-const uint8_t limitSensorPin = 2;                   // Define pin 2 for the traverser mode limit sensor.
-const uint8_t homeSensorPin = 5;                    // Define pin 5 for the home sensor.
-const uint8_t relay1Pin = 3;                        // Control pin for relay 1.
-const uint8_t relay2Pin = 4;                        // Control pin for relay 2.
-const uint8_t ledPin = 6;                           // Pin for LED output.
-const uint8_t accPin = 7;                           // Pin for accessory output.
-const long homeSensitivity = HOME_SENSITIVITY;      // Define the minimum number of steps required before homing sensor deactivates.
-const int16_t totalMinutes = 21600;                 // Total minutes in one rotation (360 * 60)
-
-long lastStep = 0;                                  // Holds the last step value we moved to (enables least distance moves).
-uint8_t homed = 0;                                  // Flag to indicate homing state: 0 = not homed, 1 = homed, 2 = failed.
-long fullTurnSteps;                                 // Assign our defined full turn steps from config.h.
-long halfTurnSteps;                                 // Defines a half turn to enable moving the least distance.
-long phaseSwitchStartSteps;                         // Defines the step count at which phase should automatically invert.
-long phaseSwitchStopSteps;                          // Defines the step count at which phase should automatically revert.
-long lastTarget = sanitySteps;                      // Holds the last step target (prevents continuous rotation if homing fails).
-uint8_t ledState = 7;                               // Flag for the LED state: 4 on, 5 slow, 6 fast, 7 off.
-bool ledOutput = LOW;                               // Boolean for the actual state of the output LED pin.
-unsigned long ledMillis = 0;                        // Required for non blocking LED blink rate timing.
-bool calibrating = false;                           // Flag to prevent other rotation activities during calibration.
-uint8_t calibrationPhase = 0;                       // Flag for calibration phase.
-unsigned long calMillis = 0;                        // Required for non blocking calibration pauses.
-bool homeSensorState;                               // Stores the current home sensor state.
-bool limitSensorState;                              // Stores the current limit sensor state.
-bool lastHomeSensorState;                           // Stores the last home sensor state.
-bool lastLimitSensorState;                          // Stores the last limit sensor state.
-unsigned long lastLimitDebounce = 0;                // Stores the last time the limit sensor switched for debouncing.
-unsigned long lastHomeDebounce = 0;                 // Stores the last time the home sensor switched for debouncing.
+long lastStep = 0;                   // Holds the last step value we moved to (enables least distance moves).
+uint8_t homed = 0;                   // Flag to indicate homing state: 0 = not homed, 1 = homed, 2 = failed.
+long fullTurnSteps;                  // Assign our defined full turn steps from config.h.
+long halfTurnSteps;                  // Defines a half turn to enable moving the least distance.
+long phaseSwitchStartSteps;          // Defines the step count at which phase should automatically invert.
+long phaseSwitchStopSteps;           // Defines the step count at which phase should automatically revert.
+long lastTarget = sanitySteps;       // Holds the last step target (prevents continuous rotation if homing fails).
+uint8_t ledState = 7;                // Flag for the LED state: 4 on, 5 slow, 6 fast, 7 off.
+bool ledOutput = LOW;                // Boolean for the actual state of the output LED pin.
+unsigned long ledMillis = 0;         // Required for non blocking LED blink rate timing.
+bool calibrating = false;            // Flag to prevent other rotation activities during calibration.
+uint8_t calibrationPhase = 0;        // Flag for calibration phase.
+unsigned long calMillis = 0;         // Required for non blocking calibration pauses.
+bool homeSensorState;                // Stores the current home sensor state.
+bool limitSensorState;               // Stores the current limit sensor state.
+bool lastHomeSensorState;            // Stores the last home sensor state.
+bool lastLimitSensorState;           // Stores the last limit sensor state.
+unsigned long lastLimitDebounce = 0; // Stores the last time the limit sensor switched for debouncing.
+unsigned long lastHomeDebounce = 0;  // Stores the last time the home sensor switched for debouncing.
 #ifdef INVERT_DIRECTION
 bool invertDirection = true;
 #else
@@ -74,9 +68,11 @@ bool invertEnable = false;
 AccelStepper stepper = STEPPER_DRIVER;
 
 // Function configure sensor pins
-void startupConfiguration() {
+void startupConfiguration()
+{
 #if SELECTED_DRIVER == A4988_DRIVER
-  if (debug) {
+  if (debug)
+  {
     Serial.println(F("DEBUG: invertDirection|invertStep|invertEnable: "));
     Serial.print(invertDirection);
     Serial.print(F("|"));
@@ -100,7 +96,7 @@ void startupConfiguration() {
   pinMode(limitSensorPin, INPUT);
 #endif
 #endif
-// Get the current sensor state
+  // Get the current sensor state
   lastHomeSensorState = digitalRead(homeSensorPin);
   homeSensorState = getHomeState();
 #if TURNTABLE_EX_MODE == TRAVERSER
@@ -108,14 +104,14 @@ void startupConfiguration() {
   limitSensorState = getLimitState();
 #endif
 
-// Configure relay output pins
+  // Configure relay output pins
   pinMode(relay1Pin, OUTPUT);
   pinMode(relay2Pin, OUTPUT);
 
-// Ensure relays are inactive on startup
+  // Ensure relays are inactive on startup
   setPhase(0);
 
-// Configure LED and accessory output pins
+  // Configure LED and accessory output pins
   pinMode(ledPin, OUTPUT);
   pinMode(accPin, OUTPUT);
 
@@ -123,27 +119,30 @@ void startupConfiguration() {
 #ifdef FULL_STEP_COUNT
   fullTurnSteps = FULL_STEP_COUNT;
 #else
-// Else read steps from EEPROM
+  // Else read steps from EEPROM
   fullTurnSteps = getSteps();
 #endif
   halfTurnSteps = fullTurnSteps / 2;
 
 #if PHASE_SWITCHING == AUTO
-// Calculate phase invert/revert steps
+  // Calculate phase invert/revert steps
   processAutoPhaseSwitch();
 #endif
 }
 
 // Function to define the stepper parameters.
-void setupStepperDriver() {
+void setupStepperDriver()
+{
   stepper.setMaxSpeed(STEPPER_MAX_SPEED);
   stepper.setAcceleration(STEPPER_ACCELERATION);
 }
 
 // Function to find the home position.
-void moveHome() {
+void moveHome()
+{
   setPhase(0);
-  if (getHomeState() == HOME_SENSOR_ACTIVE_STATE) {
+  if (getHomeState() == HOME_SENSOR_ACTIVE_STATE)
+  {
     stepper.stop();
 #if defined(DISABLE_OUTPUTS_IDLE)
     stepper.disableOutputs();
@@ -152,29 +151,37 @@ void moveHome() {
     lastStep = 0;
     homed = 1;
     Serial.println(F("Turntable homed successfully"));
-    if (debug) {
+    if (debug)
+    {
       Serial.print(F("DEBUG: Stored values for lastStep/lastTarget: "));
       Serial.print(lastStep);
       Serial.print(F("/"));
       Serial.println(lastTarget);
     }
-  } else if(!stepper.isRunning()) {
-    if (debug) {
+  }
+  else if (!stepper.isRunning())
+  {
+    if (debug)
+    {
       Serial.print(F("DEBUG: Recorded/last actual target: "));
       Serial.print(lastTarget);
       Serial.print(F("/"));
       Serial.println(stepper.targetPosition());
     }
-    if (stepper.targetPosition() == lastTarget) {
+    if (stepper.targetPosition() == lastTarget)
+    {
       stepper.setCurrentPosition(0);
       lastStep = 0;
       homed = 2;
       Serial.println(F("ERROR: Turntable failed to home, setting random home position"));
-    } else {
+    }
+    else
+    {
       stepper.enableOutputs();
       stepper.move(sanitySteps);
       lastTarget = stepper.targetPosition();
-      if (debug) {
+      if (debug)
+      {
         Serial.print(F("DEBUG: lastTarget: "));
         Serial.println(lastTarget);
       }
@@ -184,8 +191,10 @@ void moveHome() {
 }
 
 // Function to move to the indicated position.
-void moveToPosition(long steps, uint8_t phaseSwitch) {
-  if (steps != lastStep) {
+void moveToPosition(long steps, uint8_t phaseSwitch)
+{
+  if (steps != lastStep)
+  {
     Serial.print(F("Received notification to move to step postion "));
     Serial.println(steps);
     long moveSteps;
@@ -198,39 +207,51 @@ void moveToPosition(long steps, uint8_t phaseSwitch) {
     Serial.print(phaseSwitch);
 #endif
 #if TURNTABLE_EX_MODE == TRAVERSER
-// If we're in traverser mode, very simple logic, negative move to limit, positive move to home.
+    // If we're in traverser mode, very simple logic, negative move to limit, positive move to home.
     moveSteps = lastStep - steps;
 #else
 // In turntable mode we can force always moving forwards or reverse, or (default) shortest distance
 #if defined(ROTATE_FORWARD_ONLY)
-    if (debug) Serial.println(F("Force forward move only"));
+    if (debug)
+      Serial.println(F("Force forward move only"));
     moveSteps = steps - lastStep;
-    if (moveSteps < 0) {
+    if (moveSteps < 0)
+    {
       moveSteps += fullTurnSteps;
     }
 #elif defined(ROTATE_REVERSE_ONLY)
-    if (debug) Serial.println(F("Force reverse move only"));
+    if (debug)
+      Serial.println(F("Force reverse move only"));
     moveSteps = steps - lastStep;
-    if (moveSteps > 0) {
+    if (moveSteps > 0)
+    {
       moveSteps -= fullTurnSteps;
     }
 #else
-    if ((steps - lastStep) > halfTurnSteps) {
+    if ((steps - lastStep) > halfTurnSteps)
+    {
       moveSteps = steps - fullTurnSteps - lastStep;
-    } else if ((steps - lastStep) < -halfTurnSteps) {
+    }
+    else if ((steps - lastStep) < -halfTurnSteps)
+    {
       moveSteps = fullTurnSteps - lastStep + steps;
-    } else {
+    }
+    else
+    {
       moveSteps = steps - lastStep;
     }
-#endif  // Turntable forward/reverse/shortest distance
-#endif  // Turntable/traverser
+#endif // Turntable forward/reverse/shortest distance
+#endif // Turntable/traverser
     Serial.print(F(" - moving "));
     Serial.print(moveSteps);
     Serial.println(F(" steps"));
 #if PHASE_SWITCHING == AUTO
-    if ((steps >= 0 && steps < phaseSwitchStartSteps) || (steps <= fullTurnSteps && steps >= phaseSwitchStopSteps)) {
+    if ((steps >= 0 && steps < phaseSwitchStartSteps) || (steps <= fullTurnSteps && steps >= phaseSwitchStopSteps))
+    {
       phaseSwitch = 0;
-    } else {
+    }
+    else
+    {
       phaseSwitch = 1;
     }
 #endif
@@ -241,7 +262,8 @@ void moveToPosition(long steps, uint8_t phaseSwitch) {
     stepper.enableOutputs();
     stepper.move(moveSteps);
     lastTarget = stepper.targetPosition();
-    if (debug) {
+    if (debug)
+    {
       Serial.print(F("DEBUG: Stored values for lastStep/lastTarget: "));
       Serial.print(lastStep);
       Serial.print(F("/"));
@@ -251,7 +273,8 @@ void moveToPosition(long steps, uint8_t phaseSwitch) {
 }
 
 // Function to set phase.
-void setPhase(uint8_t phase) {
+void setPhase(uint8_t phase)
+{
 #if RELAY_ACTIVE_STATE == HIGH
   digitalWrite(relay1Pin, phase);
   digitalWrite(relay2Pin, phase);
@@ -263,16 +286,24 @@ void setPhase(uint8_t phase) {
 
 // Function to set/maintain our LED state for on/blink/off.
 // 4 = on, 5 = slow blink, 6 = fast blink, 7 = off.
-void processLED() {
+void processLED()
+{
   uint16_t currentMillis = millis();
-  if (ledState == 4 ) {
+  if (ledState == 4)
+  {
     ledOutput = 1;
-  } else if (ledState == 7) {
+  }
+  else if (ledState == 7)
+  {
     ledOutput = 0;
-  } else if (ledState == 5 && currentMillis - ledMillis >= LED_SLOW) {
+  }
+  else if (ledState == 5 && currentMillis - ledMillis >= LED_SLOW)
+  {
     ledOutput = !ledOutput;
     ledMillis = currentMillis;
-  } else if (ledState == 6 && currentMillis - ledMillis >= LED_FAST) {
+  }
+  else if (ledState == 6 && currentMillis - ledMillis >= LED_FAST)
+  {
     ledOutput = !ledOutput;
     ledMillis = currentMillis;
   }
@@ -288,19 +319,23 @@ void processLED() {
 // - Perform initial home rotation, set to 0 steps when homed.
 // - Perform second home rotation, set steps to currentPosition().
 // - Write steps to EEPROM.
-void calibration() {
+void calibration()
+{
   setPhase(0);
 #if TURNTABLE_EX_MODE == TRAVERSER
-  if (calibrationPhase == 3 && getLimitState() != LIMIT_SENSOR_ACTIVE_STATE) {
+  if (calibrationPhase == 3 && getLimitState() != LIMIT_SENSOR_ACTIVE_STATE)
+  {
 #else
-  if (calibrationPhase == 2 && getHomeState() == HOME_SENSOR_ACTIVE_STATE && stepper.currentPosition() > homeSensitivity) {
+  if (calibrationPhase == 2 && getHomeState() == HOME_SENSOR_ACTIVE_STATE && stepper.currentPosition() > homeSensitivity)
+  {
 #endif
     stepper.stop();
 #if defined(DISABLE_OUTPUTS_IDLE)
     stepper.disableOutputs();
 #endif
     fullTurnSteps = stepper.currentPosition();
-    if (fullTurnSteps < 0) {
+    if (fullTurnSteps < 0)
+    {
       fullTurnSteps = -fullTurnSteps;
     }
     halfTurnSteps = fullTurnSteps / 2;
@@ -317,7 +352,9 @@ void calibration() {
     lastTarget = sanitySteps;
     displayTTEXConfig();
 #if TURNTABLE_EX_MODE == TRAVERSER
-  } else if (calibrationPhase == 2 && getLimitState() == LIMIT_SENSOR_ACTIVE_STATE) {
+  }
+  else if (calibrationPhase == 2 && getLimitState() == LIMIT_SENSOR_ACTIVE_STATE)
+  {
     // In TRAVERSER mode, we want our full step count to stop short of the limit switch, so need phase 3 to move away.
     stepper.stop();
     stepper.setCurrentPosition(stepper.currentPosition());
@@ -327,10 +364,14 @@ void calibration() {
     calibrationPhase = 3;
 #endif
 #if TURNTABLE_EX_MODE == TRAVERSER
-  } else if (calibrationPhase == 1 && lastStep == sanitySteps && getHomeState() == HOME_SENSOR_ACTIVE_STATE) {
+  }
+  else if (calibrationPhase == 1 && lastStep == sanitySteps && getHomeState() == HOME_SENSOR_ACTIVE_STATE)
+  {
     Serial.println(F("CALIBRATION: Phase 2, finding limit switch..."));
 #else
-  } else if (calibrationPhase == 1 && lastStep == sanitySteps && getHomeState() == HOME_SENSOR_ACTIVE_STATE && stepper.currentPosition() > homeSensitivity) {
+  }
+  else if (calibrationPhase == 1 && lastStep == sanitySteps && getHomeState() == HOME_SENSOR_ACTIVE_STATE && stepper.currentPosition() > homeSensitivity)
+  {
     Serial.println(F("CALIBRATION: Phase 2, counting full turn steps..."));
 #endif
     stepper.stop();
@@ -344,13 +385,18 @@ void calibration() {
     stepper.moveTo(sanitySteps);
     lastStep = sanitySteps;
 #endif
-  } else if (calibrationPhase == 0 && !stepper.isRunning() && homed == 1) {
+  }
+  else if (calibrationPhase == 0 && !stepper.isRunning() && homed == 1)
+  {
     Serial.println(F("CALIBRATION: Phase 1, homing..."));
     calibrationPhase = 1;
 #if TURNTABLE_EX_MODE == TRAVERSER
-    if (getHomeState() == HOME_SENSOR_ACTIVE_STATE) {
+    if (getHomeState() == HOME_SENSOR_ACTIVE_STATE)
+    {
       Serial.println(F("Turntable already homed"));
-    } else {
+    }
+    else
+    {
       stepper.enableOutputs();
       stepper.moveTo(sanitySteps);
     }
@@ -359,7 +405,9 @@ void calibration() {
     stepper.moveTo(sanitySteps);
 #endif
     lastStep = sanitySteps;
-  } else if ((calibrationPhase == 2 || calibrationPhase == 1) && !stepper.isRunning() && stepper.currentPosition() == sanitySteps) {
+  }
+  else if ((calibrationPhase == 2 || calibrationPhase == 1) && !stepper.isRunning() && stepper.currentPosition() == sanitySteps)
+  {
     Serial.println(F("CALIBRATION: FAILED, could not home, could not determine step count"));
 #if defined(DISABLE_OUTPUTS_IDLE)
     stepper.disableOutputs();
@@ -371,8 +419,10 @@ void calibration() {
 
 // If phase switching is set to auto, calculate the trigger point steps based on the angle.
 #if PHASE_SWITCHING == AUTO
-void processAutoPhaseSwitch() {
-  if (PHASE_SWITCH_ANGLE + 180 >= 360) {
+void processAutoPhaseSwitch()
+{
+  if (PHASE_SWITCH_ANGLE + 180 >= 360)
+  {
     Serial.print(F("ERROR: The defined phase switch angle of "));
     Serial.print(PHASE_SWITCH_ANGLE);
     Serial.println(F(" degrees is invalid, setting to default 45 degrees"));
@@ -387,9 +437,11 @@ void processAutoPhaseSwitch() {
 #endif
 
 // Function to debounce and get the state of the homing sensor
-bool getHomeState() {
+bool getHomeState()
+{
   bool newHomeSensorState = digitalRead(homeSensorPin);
-  if (newHomeSensorState != lastHomeSensorState && (millis() - lastHomeDebounce) > DEBOUNCE_DELAY) {
+  if (newHomeSensorState != lastHomeSensorState && (millis() - lastHomeDebounce) > DEBOUNCE_DELAY)
+  {
     lastHomeDebounce = millis();
     lastHomeSensorState = newHomeSensorState;
   }
@@ -397,9 +449,11 @@ bool getHomeState() {
 }
 
 // Function to debounce and get the state of the limit sensor
-bool getLimitState() {
+bool getLimitState()
+{
   bool newLimitSensorState = digitalRead(limitSensorPin);
-  if (newLimitSensorState != lastLimitSensorState && (millis() - lastLimitDebounce) > DEBOUNCE_DELAY) {
+  if (newLimitSensorState != lastLimitSensorState && (millis() - lastLimitDebounce) > DEBOUNCE_DELAY)
+  {
     lastLimitDebounce = millis();
     lastLimitSensorState = newLimitSensorState;
   }
@@ -407,13 +461,15 @@ bool getLimitState() {
 }
 
 // Function to reset home state, triggering homing to happen
-void initiateHoming() {
+void initiateHoming()
+{
   homed = 0;
   lastTarget = sanitySteps;
 }
 
 // Function to trigger calibration to begin
-void initiateCalibration() {
+void initiateCalibration()
+{
   calibrating = true;
   homed = 0;
   lastTarget = sanitySteps;
@@ -421,11 +477,13 @@ void initiateCalibration() {
 }
 
 // Function to set LED activity
-void setLEDActivity(uint8_t activity) {
+void setLEDActivity(uint8_t activity)
+{
   ledState = activity;
 }
 
 // Function to set the state of the accessory pin
-void setAccessory(bool state) {
+void setAccessory(bool state)
+{
   digitalWrite(accPin, state);
 }
