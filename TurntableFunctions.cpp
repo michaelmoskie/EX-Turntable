@@ -25,7 +25,14 @@
 
 #include "TurntableFunctions.h"
 #include "IOFunctions.h"
+#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328__)
 #include "atmega328p_pins.h"
+#endif
+
+#if defined(__AVR_ATmegax08__)
+#include "atmega3208_pins.h"
+#endif
+
 const long sanitySteps = SANITY_STEPS;         // Define an arbitrary number of steps to prevent indefinite spinning if homing/calibrations fails.
 const long homeSensitivity = HOME_SENSITIVITY; // Define the minimum number of steps required before homing sensor deactivates.
 const int16_t totalMinutes = 21600;            // Total minutes in one rotation (360 * 60)
