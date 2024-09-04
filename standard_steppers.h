@@ -9,7 +9,7 @@
 
 #include <Arduino.h>
 #include "AccelStepper.h"
-#include "atmegSTEPPER_PIN_028p_pins.h"
+#include "atmega328p_pins.h"
 
 #define UNUSED_PIN 127
 
