@@ -15,20 +15,20 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with EX-Turntable.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 #ifndef IOFUNCTIONS_H
 #define IOFUNCTIONS_H
 
+#include "EEPROMFunctions.h"
+#include "TurntableFunctions.h"
+#include "defines.h"
+#include "version.h"
 #include <Arduino.h>
 #include <Wire.h>
-#include "defines.h"
-#include "TurntableFunctions.h"
-#include "EEPROMFunctions.h"
-#include "version.h"
 
-extern bool testCommandSent;    // Flag a test command has been sent via serial.
-extern uint8_t testActivity;    // Activity sent via serial.
+extern bool testCommandSent; // Flag a test command has been sent via serial.
+extern uint8_t testActivity; // Activity sent via serial.
 extern uint8_t testStepsMSB;
 extern uint8_t testStepsLSB;
 extern bool debug;

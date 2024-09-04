@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with EX-Turntable.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 #ifndef DEFINES_H
 #define DEFINES_H
@@ -29,52 +29,58 @@
 #define TRAVERSER 1
 
 // If we haven't got a custom config.h, use the example.
-#if __has_include ( "config.h")
-  #include "config.h"
+#if __has_include("config.h")
+#include "config.h"
 #else
-  #warning config.h not found. Using defaults from config.example.h
-  #include "config.example.h"
+#warning config.h not found. Using defaults from config.example.h
+#include "config.example.h"
 #endif
 
 // Define global variables here.
 #ifndef TURNTABLE_EX_MODE
-#define TURNTABLE_EX_MODE TURNTABLE                 // If the mode isn't defined, put it in turntable mode.
+#define TURNTABLE_EX_MODE                                                      \
+  TURNTABLE // If the mode isn't defined, put it in turntable mode.
 #endif
 
 #ifndef STEPPER_MAX_SPEED
-#define STEPPER_MAX_SPEED 200                       // Set default max speed if not defined.
+#define STEPPER_MAX_SPEED 200 // Set default max speed if not defined.
 #endif
 
 #ifndef STEPPER_ACCELERATION
-#define STEPPER_ACCELERATION 25                     // Set default acceleration if not defined.
+#define STEPPER_ACCELERATION 25 // Set default acceleration if not defined.
 #endif
 
 #ifndef SANITY_STEPS
-#define SANITY_STEPS 10000                          // Define sanity steps if not in config.h.
+#define SANITY_STEPS 10000 // Define sanity steps if not in config.h.
 #endif
 
 #ifndef HOME_SENSITIVITY
-#define HOME_SENSITIVITY 300                        // Define homing sensitivity if not in config.h.
+#define HOME_SENSITIVITY 300 // Define homing sensitivity if not in config.h.
 #endif
 
 #ifndef PHASE_SWITCHING
-#define PHASE_SWITCHING AUTO                        // Define automatic phase switching if not in config.h
+#define PHASE_SWITCHING                                                        \
+  AUTO // Define automatic phase switching if not in config.h
 #endif
 
 #ifndef PHASE_SWITCH_ANGLE
-#define PHASE_SWITCH_ANGLE 45                       // Define phase switch at 45 degrees if not in config.h
+#define PHASE_SWITCH_ANGLE                                                     \
+  45 // Define phase switch at 45 degrees if not in config.h
 #endif
 
-#ifndef DEBOUNCE_DELAY                              // Define debounce delay in ms if not in config.h
+#ifndef DEBOUNCE_DELAY // Define debounce delay in ms if not in config.h
 #if TURNTABLE_EX_MODE == TRAVERSER
-#define DEBOUNCE_DELAY 10                           // If we're a traverser, use a delay because switches likely in use
+#define DEBOUNCE_DELAY                                                         \
+  10 // If we're a traverser, use a delay because switches likely in use
 #elif TURNTABLE_EX_MODE == TURNTABLE
-#define DEBOUNCE_DELAY 0                            // If we're a turntable, use 0 because hall effect sensor likely in use
+#define DEBOUNCE_DELAY                                                         \
+  0 // If we're a turntable, use 0 because hall effect sensor likely in use
 #endif
 #endif
 
 #ifndef STEPPER_GEARING_FACTOR
-#define STEPPER_GEARING_FACTOR 1                    // Define the gearing factor to default of 1 if not in config.h
+#define STEPPER_GEARING_FACTOR                                                 \
+  1 // Define the gearing factor to default of 1 if not in config.h
 #endif
 
 // Define current version of EEPROM configuration
@@ -84,7 +90,8 @@
 #error Both ROTATE_FORWARD_ONLY and ROTATE_REVERSE_ONLY defined, please only define one or the other
 #endif
 
-#if (TURNTABLE_EX_MODE == TRAVERSER && defined(ROTATE_FORWARD_ONLY)) || (TURNTABLE_EX_MODE == TRAVERSER && defined(ROTATE_REVERSE_ONLY))
+#if (TURNTABLE_EX_MODE == TRAVERSER && defined(ROTATE_FORWARD_ONLY)) ||        \
+    (TURNTABLE_EX_MODE == TRAVERSER && defined(ROTATE_REVERSE_ONLY))
 #error Traverser mode cannot operate with ROTATE_FORWARD_ONLY or ROTATE_REVERSE_ONLY
 #endif
 

@@ -15,14 +15,14 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with EX-Turntable.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 #ifndef EEPROMFUNCTIONS_H
 #define EEPROMFUNCTIONS_H
 
-#include <Arduino.h>
-#include "defines.h"
 #include "TurntableFunctions.h"
+#include "defines.h"
+#include <Arduino.h>
 
 long getSteps();
 void writeEEPROM(long steps);

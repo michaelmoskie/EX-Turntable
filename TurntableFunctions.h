@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with EX-Turntable.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 /*=============================================================
  * This file contains all functions pertinent to turntable
@@ -26,10 +26,10 @@
 #ifndef TURNTABLEFUNCTIONS_H
 #define TURNTABLEFUNCTIONS_H
 
-#include <Arduino.h>
-#include "defines.h"
 #include "AccelStepper.h"
+#include "defines.h"
 #include "standard_steppers.h"
+#include <Arduino.h>
 
 extern const long sanitySteps;
 extern bool calibrating;
