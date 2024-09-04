@@ -4,8 +4,3 @@ const uint8_t relay1Pin = 3;      // Control pin for relay 1.
 const uint8_t relay2Pin = 4;      // Control pin for relay 2.
 const uint8_t ledPin = 6;         // Pin for LED output.
 const uint8_t accPin = 7;         // Pin for accessory output.
-
-const uint8_t STEPPER_PIN_0 = A3;
-const uint8_t STEPPER_PIN_1 = A1;
-const uint8_t STEPPER_PIN_2 = A2;
-const uint8_t STEPPER_PIN_3 = A0;
