@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with EX-Turntable.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 #include "IOFunctions.h"
 #include "EEPROMFunctions.h"
@@ -75,51 +75,51 @@ void processSerialInput() {
   }
   if (newSerialData == true) {
     newSerialData = false;
-    char * strtokIndex;
-    strtokIndex = strtok(serialInputChars," ");
-    char command = strtokIndex[0];     // first parameter is activity
-    strtokIndex = strtok(NULL," ");     // space separator
+    char *strtokIndex;
+    strtokIndex = strtok(serialInputChars, " ");
+    char command = strtokIndex[0];   // first parameter is activity
+    strtokIndex = strtok(NULL, " "); // space separator
     long steps;
     if (command == 'M') {
       steps = atol(strtokIndex);
-      strtokIndex = strtok(NULL," ");
+      strtokIndex = strtok(NULL, " ");
       testActivity = atoi(strtokIndex);
     }
     switch (command) {
-      case 'C':
-        serialCommandC();
-        break;
-      
-      case 'D':
-        serialCommandD();
-        break;
-      
-      case 'E':
-        serialCommandE();
-        break;
+    case 'C':
+      serialCommandC();
+      break;
 
-      case 'H':
-        serialCommandH();
-        break;
-      
-      case 'M':
-        serialCommandM(steps);
-        break;
+    case 'D':
+      serialCommandD();
+      break;
 
-      case 'R':
-        serialCommandR();
-        break;
+    case 'E':
+      serialCommandE();
+      break;
 
-      case 'T':
-        serialCommandT();
-        break;
+    case 'H':
+      serialCommandH();
+      break;
 
-      case 'V':
-        serialCommandV();
-        break;
+    case 'M':
+      serialCommandM(steps);
+      break;
 
-      default:
-        break;
+    case 'R':
+      serialCommandR();
+      break;
+
+    case 'T':
+      serialCommandT();
+      break;
+
+    case 'V':
+      serialCommandV();
+      break;
+
+    default:
+      break;
     }
   }
 }
@@ -180,7 +180,8 @@ void serialCommandM(long steps) {
   if (steps < 0) {
     Serial.println(F("Cannot provide a negative step count"));
   } else if (steps > 32767) {
-    Serial.println(F("Step count too large, refer to the documentation for large step counts > 32767"));
+    Serial.println(F("Step count too large, refer to the documentation for "
+                     "large step counts > 32767"));
   } else {
     Serial.print(F("Test move "));
     Serial.print(steps);
@@ -208,22 +209,22 @@ void serialCommandT() {
     Serial.println(F("Disabling sensor testing mode, reboot required"));
     sensorTesting = false;
   } else {
-    Serial.println(F("Enabling sensor testing mode, taking EX-Turntable offline"));
+    Serial.println(
+        F("Enabling sensor testing mode, taking EX-Turntable offline"));
     Wire.end();
     sensorTesting = true;
   }
 }
 
 // V command to display version and other info
-void serialCommandV() {
-  displayTTEXConfig();
-}
+void serialCommandV() { displayTTEXConfig(); }
 
 // Function to display the defined stepper motor config.
 void displayTTEXConfig() {
   // Basic setup, display what this is.
   Serial.begin(115200);
-  while(!Serial);
+  while (!Serial)
+    ;
   Serial.println(F("License GPLv3 fsf.org (c) dcc-ex.com"));
   Serial.print(F("EX-Turntable version "));
   Serial.println(VERSION);
@@ -232,7 +233,7 @@ void displayTTEXConfig() {
   if (fullTurnSteps == 0) {
     Serial.println(F("EX-Turntable has not been calibrated yet"));
   } else {
-#ifdef FULL_STEP_COUNT    
+#ifdef FULL_STEP_COUNT
     Serial.print(F("Manual override has been set for "));
 #else
     Serial.print(F("EX-Turntable has been calibrated for "));
@@ -292,7 +293,8 @@ void displayTTEXConfig() {
 
   // If in sensor testing mode, display this, don't enable stepper or I2C
   if (sensorTesting) {
-    Serial.println(F("SENSOR TESTING ENABLED, EX-Turntable operations disabled"));
+    Serial.println(
+        F("SENSOR TESTING ENABLED, EX-Turntable operations disabled"));
     Serial.print(F("Home/limit switch current state: "));
     Serial.print(homeSensorState);
     Serial.print(F("/"));
@@ -310,7 +312,7 @@ void receiveEvent(int received) {
     Serial.println(F(" bytes"));
   }
   int16_t receivedSteps;
-  long steps;  
+  long steps;
   uint8_t activity;
   uint8_t receivedStepsMSB;
   uint8_t receivedStepsLSB;
@@ -346,8 +348,10 @@ void receiveEvent(int received) {
       Serial.print(F("|"));
       Serial.println(steps);
     }
-    if (steps <= fullTurnSteps && activity < 2 && !stepper.isRunning() && !calibrating) {
-      // Activities 0/1 require turning and setting phase, process only if stepper is not running.
+    if (steps <= fullTurnSteps && activity < 2 && !stepper.isRunning() &&
+        !calibrating) {
+      // Activities 0/1 require turning and setting phase, process only if
+      // stepper is not running.
       if (debug) {
         Serial.print(F("DEBUG: Requested valid step move to: "));
         Serial.print(steps);
@@ -355,14 +359,18 @@ void receiveEvent(int received) {
         Serial.println(activity);
       }
       moveToPosition(steps, activity);
-    } else if (activity == 2 && !stepper.isRunning() && (!calibrating || homed == 2)) {
-      // Activity 2 needs to reset our homed flag to initiate the homing process, only if stepper not running.
+    } else if (activity == 2 && !stepper.isRunning() &&
+               (!calibrating || homed == 2)) {
+      // Activity 2 needs to reset our homed flag to initiate the homing
+      // process, only if stepper not running.
       if (debug) {
         Serial.println(F("DEBUG: Requested to home"));
       }
       initiateHoming();
-    } else if (activity == 3 && !stepper.isRunning() && (!calibrating || homed == 2)) {
-      // Activity 3 will initiate calibration sequence, only if stepper not running.
+    } else if (activity == 3 && !stepper.isRunning() &&
+               (!calibrating || homed == 2)) {
+      // Activity 3 will initiate calibration sequence, only if stepper not
+      // running.
       if (debug) {
         Serial.println(F("DEBUG: Calibration requested"));
       }
@@ -388,16 +396,19 @@ void receiveEvent(int received) {
       setAccessory(LOW);
     } else {
       if (debug) {
-        Serial.print(F("DEBUG: Invalid step count or activity provided, or turntable still moving: "));
+        Serial.print(F("DEBUG: Invalid step count or activity provided, or "
+                       "turntable still moving: "));
         Serial.print(steps);
         Serial.print(F(" steps, activity: "));
         Serial.println(activity);
       }
     }
   } else {
-  // Even if we have nothing to do, we need to read and discard all the bytes to avoid timeouts in the CS.
+    // Even if we have nothing to do, we need to read and discard all the bytes
+    // to avoid timeouts in the CS.
     if (debug) {
-      Serial.println(F("DEBUG: Incorrect number of bytes received, discarding"));
+      Serial.println(
+          F("DEBUG: Incorrect number of bytes received, discarding"));
     }
     while (Wire.available()) {
       Wire.read();
@@ -405,14 +416,13 @@ void receiveEvent(int received) {
   }
 }
 
-// Function to return the stepper status when requested by the IO_TurntableEX.h device driver.
-// 0 = Finished moving to the correct position.
-// 1 = Still moving.
+// Function to return the stepper status when requested by the IO_TurntableEX.h
+// device driver. 0 = Finished moving to the correct position. 1 = Still moving.
 void requestEvent() {
   uint8_t stepperStatus;
   if (stepper.isRunning()) {
     stepperStatus = 1;
-  } else  {
+  } else {
     stepperStatus = 0;
   }
   Wire.write(stepperStatus);

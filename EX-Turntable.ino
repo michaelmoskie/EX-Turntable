@@ -16,17 +16,18 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with EX-Turntable.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 // Include required libraries.
-#include <Arduino.h>
 #include "defines.h"
+#include <Arduino.h>
 
 // Include local files
 #include "IOFunctions.h"
 #include "TurntableFunctions.h"
 
-bool lastRunningState;   // Stores last running state to allow turning the stepper off after moves.
+bool lastRunningState; // Stores last running state to allow turning the stepper
+                       // off after moves.
 
 void setup() {
   // Run startup configuration
@@ -36,14 +37,15 @@ void setup() {
   setupStepperDriver();
 
   // If we're not sensor testing, start Wire()
-  if (!sensorTesting) setupWire();
+  if (!sensorTesting)
+    setupWire();
 
   // Display EX-Turntable configuration
   displayTTEXConfig();
 }
 
 void loop() {
-// If we're only testing sensors, don't do anything else.
+  // If we're only testing sensors, don't do anything else.
   if (sensorTesting) {
     bool testHomeSensorState = getHomeState();
     if (testHomeSensorState != homeSensorState) {
@@ -69,8 +71,9 @@ void loop() {
 #endif
   } else {
 #if TURNTABLE_EX_MODE == TRAVERSER
-// If we hit our limit switch when not calibrating, stop!
-    if (getLimitState() == LIMIT_SENSOR_ACTIVE_STATE && !calibrating && stepper.isRunning() && stepper.targetPosition() < 0) {
+    // If we hit our limit switch when not calibrating, stop!
+    if (getLimitState() == LIMIT_SENSOR_ACTIVE_STATE && !calibrating &&
+        stepper.isRunning() && stepper.targetPosition() < 0) {
       Serial.println(F("ALERT! Limit sensor activitated, halting stepper"));
       if (!homed) {
         homed = 1;
@@ -79,28 +82,29 @@ void loop() {
       stepper.setCurrentPosition(stepper.currentPosition());
     }
 
-// If we hit our home switch when not homing, stop!
-    if (getHomeState() == HOME_SENSOR_ACTIVE_STATE && homed && !calibrating && stepper.isRunning() && stepper.distanceToGo() > 0) {
+    // If we hit our home switch when not homing, stop!
+    if (getHomeState() == HOME_SENSOR_ACTIVE_STATE && homed && !calibrating &&
+        stepper.isRunning() && stepper.distanceToGo() > 0) {
       Serial.println(F("ALERT! Home sensor activitated, halting stepper"));
       stepper.stop();
       stepper.setCurrentPosition(0);
     }
 #endif
 
-// If we haven't successfully homed yet, do it.
+    // If we haven't successfully homed yet, do it.
     if (homed == 0) {
       moveHome();
     }
 
-// If flag is set for calibrating, do it.
+    // If flag is set for calibrating, do it.
     if (calibrating) {
       calibration();
     }
 
-// Process the stepper object continuously.
+    // Process the stepper object continuously.
     stepper.run();
 
-// Process our LED.
+    // Process our LED.
     processLED();
 
 // If disabling on idle is enabled, disable the stepper.

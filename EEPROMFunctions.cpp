@@ -15,14 +15,18 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with EX-Turntable.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 #include "EEPROMFunctions.h"
-#include <EEPROM.h>
 #include "IOFunctions.h"
+#include <EEPROM.h>
 
-char eepromFlag[4] = {'T', 'T', 'E', 'X'};          // EEPROM location 0 to 3 should contain TTEX if we have stored steps.
-const uint8_t eepromVersion = EEPROM_VERSION;       // Version of stored EEPROM data to invalidate stored steps if config changes.
+char eepromFlag[4] = {
+    'T', 'T', 'E',
+    'X'}; // EEPROM location 0 to 3 should contain TTEX if we have stored steps.
+const uint8_t eepromVersion =
+    EEPROM_VERSION; // Version of stored EEPROM data to invalidate stored steps
+                    // if config changes.
 
 // Function to retrieve step count from EEPROM.
 // Looks for identifier "TTEX" at 0 to 3.
@@ -32,7 +36,7 @@ long getSteps() {
   char data[4];
   long eepromSteps;
   bool stepsSet = true;
-  for (uint8_t i = 0; i < 4; i ++) {
+  for (uint8_t i = 0; i < 4; i++) {
     data[i] = EEPROM.read(i);
     if (data[i] != eepromFlag[i]) {
       stepsSet = false;
@@ -45,7 +49,8 @@ long getSteps() {
     stepsSet = false;
   }
   if (stepsSet) {
-    eepromSteps = ((long)EEPROM.read(5) << 24) + ((long)EEPROM.read(6) << 16) + ((long)EEPROM.read(7) << 8) + (long)EEPROM.read(8);
+    eepromSteps = ((long)EEPROM.read(5) << 24) + ((long)EEPROM.read(6) << 16) +
+                  ((long)EEPROM.read(7) << 8) + (long)EEPROM.read(8);
     if (eepromSteps <= sanitySteps) {
       if (debug) {
         Serial.print(F("DEBUG: TTEX steps defined in EEPROM: "));
@@ -71,7 +76,7 @@ long getSteps() {
 
 // Function to write step count with "TTEX" identifier to EEPROM.
 void writeEEPROM(long steps) {
-  (void) EEPROM;
+  (void)EEPROM;
   for (uint8_t i = 0; i < 4; i++) {
     EEPROM.write(i, eepromFlag[i]);
   }
